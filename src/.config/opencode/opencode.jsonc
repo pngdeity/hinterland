@@ -1,0 +1,515 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "deepseek/deepseek-v4-pro",
+  "small_model": "deepseek/deepseek-v4-flash",
+  "enabled_providers": ["deepseek", "github-copilot"],
+  "provider": {
+    "deepseek": {
+      "models": {
+        "deepseek-v4-pro": {
+          "cost": {
+            "input": 0.435,
+            "output": 0.87,
+            "cache_read": 0.003625,
+            "cache_write": 0.435
+          }
+        },
+        "deepseek-v4-flash": {
+          "cost": {
+            "input": 0.14,
+            "output": 0.28,
+            "cache_read": 0.0028,
+            "cache_write": 0.14
+          }
+        }
+      }
+    }
+  },
+  // https://opencode.ai/docs/formatters/
+  // Opt-in: only the formatters listed below are enabled.
+  // All other built-ins are explicitly disabled.
+  "formatter": {
+    "ruff": {},
+    "gofmt": {},
+    "shfmt": {},
+    "deno": {
+      "command": ["deno", "fmt", "--unstable-css", "--unstable-sql", "$FILE"],
+      "extensions": [
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx",
+        ".json",
+        ".jsonc",
+        ".md",
+        ".css",
+        ".scss",
+        ".sass",
+        ".less",
+        ".html",
+        ".sql"
+      ]
+    },
+    // deno also supports with --unstable-component: .svelte, .vue, .astro, angular
+    // deno also supports: .yaml, .yml, .ipynb, .njk, .vto, .mts, .mjs, .cts, .cjs
+    "prettier": { "disabled": true },
+    "yamlfmt": {
+      "command": ["yamlfmt", "$FILE"],
+      "extensions": [".yaml", ".yml"]
+    },
+    "xmllint": {
+      "command": ["xmllint", "--format", "--output", "$FILE", "$FILE"],
+      "extensions": [".xml", ".csproj", ".slnx"]
+    },
+    "tofu": {
+      "command": ["tofu", "fmt", "$FILE"],
+      "extensions": [".tf", ".tfvars"]
+    },
+    // C#: dotnet format whitespace --folder works but requires relative paths in --include.
+    // csharpier (dotnet tool install -g csharpier) handles single files natively. Decide later.
+    // mediawiki: wikiparser-node (npm) has lint()+fix:true for 40+ rules. npx -p wikiparser-node node -e "..." $FILE. Decide later.
+    "regal": {
+      "command": ["regal", "fix", "$FILE"],
+      "extensions": [".rego"]
+    },
+    "pkl": {
+      "command": ["pkl", "format", "-w", "$FILE"],
+      "extensions": [".pkl"]
+    },
+    "air": { "disabled": true },
+    "biome": { "disabled": true },
+    "cargofmt": { "disabled": true },
+    "clang-format": { "disabled": true },
+    "cljfmt": { "disabled": true },
+    "dart": { "disabled": true },
+    "dfmt": { "disabled": true },
+    "gleam": { "disabled": true },
+    "htmlbeautifier": { "disabled": true },
+    "ktlint": { "disabled": true },
+    "mix": { "disabled": true },
+    "nixfmt": { "disabled": true },
+    "ocamlformat": { "disabled": true },
+    "ormolu": { "disabled": true },
+    "oxfmt": { "disabled": true },
+    "pint": { "disabled": true },
+    "rubocop": { "disabled": true },
+    "rustfmt": { "disabled": true },
+    "standardrb": { "disabled": true },
+    "terraform": { "disabled": true },
+    "uv": { "disabled": true },
+    "zig": { "disabled": true }
+  },
+  // https://opencode.ai/docs/lsp/
+  // System-installed LSP servers with no auto-download.
+  // Disabled servers preserve their command for quick re-enabling.
+  "lsp": {
+    "bash": {
+      "command": ["bash-language-server", "start"],
+      "extensions": [".sh", ".bash", ".zsh", ".ksh", "PKGBUILD", "Makefile"],
+      "initialization": {
+        "shfmt": {
+          "languageDialect": "bash"
+        }
+      }
+    },
+    // Requires: npm i -g dockerfile-language-server-nodejs
+    "docker": {
+      "command": ["docker-langserver", "--stdio"],
+      "extensions": [".dockerfile", "Dockerfile", "Containerfile"]
+    },
+    // Requires: cargo install just-lsp or sudo pacman -S just-lsp
+    "just": {
+      "command": ["just-lsp"],
+      "extensions": ["Justfile", "justfile"]
+    },
+    // No LSP exists for Makefiles. Make is too dynamic (macros, eval, filesystem-dependent targets).
+    "clangd": {
+      "command": ["clangd", "--background-index", "--clang-tidy"],
+      "disabled": true
+    },
+    "csharp": {
+      "command": ["roslyn-language-server", "--stdio", "--autoLoadProjects"]
+    },
+    "dart": {
+      "command": ["dart", "language-server", "--lsp"],
+      "disabled": true
+    },
+    "deno": {
+      "command": ["deno", "lsp"],
+      "disabled": true
+    },
+    // eslint requires eslint as a project-level npm dep to activate.
+    "eslint": {
+      "command": ["eslint-language-server", "--stdio"],
+      "disabled": true
+    },
+    "gopls": {
+      "command": ["gopls"]
+    },
+    "lua-ls": {
+      "command": ["lua-language-server"]
+    },
+    "nixd": {
+      "command": ["nixd"],
+      "disabled": true
+    },
+    "pkl": {
+      "command": ["pkl-lsp"],
+      "extensions": [".pkl", ".pcf"]
+    },
+    "pyright": {
+      "command": ["pyright-langserver", "--stdio"],
+      "extensions": [".py", ".pyi"],
+      "disabled": false
+    },
+    "razor": {
+      "command": ["roslyn-language-server", "--stdio", "--autoLoadProjects"]
+    },
+    "regal": {
+      "command": ["regal", "language-server"],
+      "extensions": [".rego"]
+    },
+    "rust": {
+      "command": ["rust-analyzer"],
+      "disabled": true
+    },
+    "terraform": {
+      "command": ["terraform-ls", "serve"],
+      "initialization": {
+        "terraform": {
+          "path": "/usr/bin/tofu"
+        },
+        "experimentalFeatures": {
+          "prefillRequiredFields": true
+        }
+      }
+    },
+    "typescript": {
+      "command": ["typescript-language-server", "--stdio"]
+    },
+    "yaml-ls": {
+      "command": ["yaml-language-server", "--stdio"],
+      "initialization": {
+        "yaml": {
+          "schemaStore": { "enable": true },
+          "keyOrdering": true,
+          "schemas": {
+            "https://raw.githubusercontent.com/pngdeity/apm-user-repository/main/schemas/apm.json": [
+              "**/apm.yml"
+            ]
+          }
+        }
+      }
+    }
+  },
+  // https://opencode.ai/docs/config/#compaction
+  "compaction": {
+    "auto": false,
+    "prune": false,
+    "reserved": 10000
+  },
+  // https://opencode.ai/docs/permissions/
+  // Merge order: opencode defaults → values below → per-agent overrides.
+  // An agent inherits everything from this block unless it explicitly overrides a key.
+  //
+  // -- Shell commands --
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "echo*": "allow",
+      "pwd*": "allow",
+      "env --help*": "allow",
+      "env --version*": "allow",
+      "date*": "allow",
+      "stat*": "allow",
+      "tree*": "allow",
+      "wc*": "allow",
+      "sort*": "allow",
+      "tail*": "allow",
+      "uniq*": "allow",
+      "cat*": "allow",
+      "cut*": "allow",
+      "tr *": "allow",
+      "true*": "allow",
+      "paste*": "allow",
+      "column*": "allow",
+      "col *": "allow",
+      "diff*": "allow",
+      "jq*": "allow",
+      "yq*": "allow",
+      "rg*": "allow",
+      "ripgrep*": "allow",
+      "fd*": "allow",
+      "fdfind*": "allow",
+      "realpath*": "allow",
+      "dirname*": "allow",
+      "basename*": "allow",
+      "type*": "allow",
+      "command*": "allow",
+      "conftest parse*": "allow",
+      "conftest reformat*": "allow",
+      "conftest test*": "allow",
+      "conftest verify*": "allow",
+      "id*": "allow",
+      "info*": "allow",
+      "uname*": "allow",
+      "hostname*": "allow",
+      "ps*": "allow",
+      "pgrep*": "allow",
+      "lsof*": "allow",
+      "sha256sum*": "allow",
+      "sha1sum*": "allow",
+      "md5sum*": "allow",
+      "base64*": "allow",
+      "xxd*": "allow",
+      "hexdump*": "allow",
+      "readelf*": "allow",
+      "strings*": "allow",
+      "pip show*": "allow",
+      "pip list*": "allow",
+      "pkl analyze*": "allow",
+      "pkl eval*": "allow",
+      "pkl format*": "allow",
+      "pkl test*": "allow",
+      "ls*": "allow",
+      "find * -name*": "allow",
+      "find * -type*": "allow",
+      "find * -maxdepth*": "allow",
+      "find * -path*": "allow",
+      "find * -mindepth*": "allow",
+      "grep*": "allow",
+      "which*": "allow",
+      "printf*": "allow",
+      "file*": "allow",
+      "bat*": "allow",
+      "head*": "allow",
+      "man*": "allow",
+      "readlink*": "allow",
+      "mkdir*": "allow",
+      "npm -h*": "allow",
+      "npm --help*": "allow",
+      "npm -v*": "allow",
+      "npm --version*": "allow",
+      "npm bugs*": "allow",
+      "npm config get*": "allow",
+      "npm config list*": "allow",
+      "npm diff*": "allow",
+      "npm doctor*": "allow",
+      "npm explain*": "allow",
+      "npm fund*": "allow",
+      "npm help*": "allow",
+      "npm info*": "allow",
+      "npm list*": "allow",
+      "npm ls*": "allow",
+      "npm outdated*": "allow",
+      "npm pack --dry-run*": "allow",
+      "npm ping*": "allow",
+      "npm prefix*": "allow",
+      "npm repo*": "allow",
+      "npm root*": "allow",
+      "npm sbom*": "allow",
+      "npm search*": "allow",
+      "npm show*": "allow",
+      "npm view*": "allow",
+      "npm whoami*": "allow",
+      "npm why*": "allow",
+      "npx --help*": "allow",
+      "npx -h*": "allow",
+      "npx -v*": "allow",
+      "npx --version*": "allow",
+      "tar t*": "allow",
+      "tar --list*": "allow",
+      "gzip -l*": "allow",
+      "gzip -t*": "allow",
+      "gunzip -l*": "allow",
+      "gunzip -t*": "allow",
+      "unzip -l*": "allow",
+      "unzip -t*": "allow",
+      "apropos*": "allow",
+      // -- Git read-only --
+      "git status*": "allow",
+      "git log*": "allow",
+      "git diff*": "allow",
+      "git show*": "allow",
+      "git branch*": "allow",
+      "git branch -d*": "ask",
+      "git branch -D*": "ask",
+      "git branch --delete*": "ask",
+      "git branch -m*": "ask",
+      "git branch -M*": "ask",
+      "git branch -c*": "ask",
+      "git branch --copy*": "ask",
+      "git branch -u*": "ask",
+      "git branch --edit-description*": "ask",
+      "git tag*": "allow",
+      "git tag -d*": "ask",
+      "git tag --delete*": "ask",
+      "git tag -a*": "ask",
+      "git tag -s*": "ask",
+      "git tag -f*": "ask",
+      "git stash list*": "allow",
+      "git stash show*": "allow",
+      "git reflog*": "allow",
+      "git blame*": "allow",
+      "git grep*": "allow",
+      "git ls-files*": "allow",
+      "git ls-tree*": "allow",
+      "git ls-remote*": "allow",
+      "git rev-parse*": "allow",
+      "git rev-list*": "allow",
+      "git describe*": "allow",
+      "git remote -v*": "allow",
+      "git remote show*": "allow",
+      "git config --get*": "allow",
+      "git config --get-regexp*": "allow",
+      "git config --list*": "allow",
+      "git worktree list*": "allow",
+      "git shortlog*": "allow",
+      "git for-each-ref*": "allow",
+      "git merge-base*": "allow",
+      "git cherry*": "allow",
+      "git name-rev*": "allow",
+      "git cat-file*": "allow",
+      "git count-objects*": "allow",
+      "git submodule status*": "allow",
+      "git notes list*": "allow",
+      "git notes show*": "allow",
+      "git check-ignore*": "allow",
+      "git check-attr*": "allow",
+      "git verify-commit*": "allow",
+      "git verify-tag*": "allow",
+      "git range-diff*": "allow",
+      "git help*": "allow",
+      "go vet*": "allow",
+      "gh --help*": "allow",
+      "gh -h*": "allow",
+      "gh --version*": "allow",
+      "gh api * --method GET*": "allow",
+      "gh api * -X GET*": "allow",
+      "gh auth status*": "allow",
+      "gh copilot suggest*": "allow",
+      "gh gist list*": "allow",
+      "gh gist view*": "allow",
+      "gh issue list*": "allow",
+      "gh issue status*": "allow",
+      "gh issue view*": "allow",
+      "gh label list*": "allow",
+      "gh pr checks*": "allow",
+      "gh pr diff*": "allow",
+      "gh pr list*": "allow",
+      "gh pr status*": "allow",
+      "gh pr view*": "allow",
+      "gh release list*": "allow",
+      "gh release view*": "allow",
+      "gh repo list*": "allow",
+      "gh repo view*": "allow",
+      "gh run list*": "allow",
+      "gh run view*": "allow",
+      "gh search *": "allow",
+      "gh workflow list*": "allow",
+      "gh workflow view*": "allow",
+      "gh variable list*": "allow",
+      "copilot --help*": "allow",
+      "copilot -h*": "allow",
+      "copilot --version*": "allow",
+      "copilot -v*": "allow",
+      "copilot version*": "allow",
+      "copilot help*": "allow",
+      "copilot completion*": "allow",
+      "copilot update*": "allow",
+      "gh copilot --help*": "allow",
+      "gh copilot -h*": "allow",
+      "gh copilot --version*": "allow",
+      "gh copilot -v*": "allow",
+      "gh copilot version*": "allow",
+      "gh copilot help*": "allow",
+      "gh copilot completion*": "allow",
+      "gh copilot --remove*": "allow",
+      "yay -F*": "allow",
+      "yay -Q*": "allow",
+      "yay -T*": "allow",
+      "yay -P*": "allow",
+      "yay -Gp*": "allow",
+      "yay -h*": "allow",
+      "yay --help*": "allow",
+      "yay -V*": "allow",
+      "yay --version*": "allow",
+      "pacman -F*": "allow",
+      "pacman -Q*": "allow",
+      "pacman -T*": "allow",
+      "pacman -h*": "allow",
+      "pacman --help*": "allow",
+      "pacman -V*": "allow",
+      "pacman --version*": "allow",
+      "uv pip list*": "allow",
+      "uv pip show*": "allow",
+      "uv pip freeze*": "allow",
+      "uv pip tree*": "allow",
+      "uv tool list*": "allow",
+      "uv tool dir*": "allow",
+      "uv cache dir*": "allow",
+      "uv python list*": "allow",
+      "uv python find*": "allow",
+      "uv tree*": "allow",
+      "uv lock --check*": "allow",
+      "uv lock --check-exists*": "allow",
+      "uv auth token*": "allow",
+      "uv auth dir*": "allow",
+      "uv help*": "allow",
+      "uv --help*": "allow",
+      "uv -V*": "allow",
+      "echo* >*": "ask",
+      "*>*": "ask",
+      "*2>/dev/null*": "allow",
+      "* 2> /dev/null*": "allow",
+      "*>/dev/null 2>&1*": "allow",
+      "* &> /dev/null*": "allow",
+      "* &>/dev/null*": "allow",
+      "* 2>&1*": "allow",
+      "ctx7*": "allow"
+    },
+
+    // -- File I/O --
+    "webfetch": "allow",
+    "websearch": "allow",
+    "read": {
+      "*": "allow",
+      "*.env": "ask",
+      "*.env.*": "ask",
+      "**/.env*": "ask",
+      "*.env.example": "allow"
+    },
+
+    // -- Agent behavior --
+    "question": "allow",
+    "doom_loop": "ask",
+
+    // -- Plan / repo (plan_enter/exit/clone match opencode defaults, made explicit) --
+    "plan_enter": "deny",
+    "plan_exit": "deny",
+    "repo_clone": "deny",
+    "repo_overview": "ask",
+
+    // -- External paths --
+    "external_directory": {
+      "*": "ask",
+      "~/.local/share/opencode/tool-output/*": "allow",
+      "/tmp/opencode/*": "allow",
+      "~/.agents/skills/*": "allow",
+      "/tmp/*": "allow"
+    },
+
+    // -- Skills --
+    "skill": {
+      "*": "allow"
+    }
+  },
+  // https://opencode.ai/docs/plugins/
+  "plugin": [
+    "@tarquinen/opencode-dcp",
+    "opencode-supermemory",
+    "opencode-worktree",
+    "opencode-notify"
+  ],
+  "agent": {}
+}
