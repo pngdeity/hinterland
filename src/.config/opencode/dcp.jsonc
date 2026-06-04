@@ -30,12 +30,12 @@
     "showCompression": true,
     "summaryBuffer": false,
     "maxContextLimit": "30%",
-    "minContextLimit": "10%",
+    "minContextLimit": "5%",
     "modelMaxLimits": {
       "deepseek/deepseek-v4-pro": "30%"
     },
     "modelMinLimits": {
-      "deepseek/deepseek-v4-pro": "10%"
+      "deepseek/deepseek-v4-pro": "5%"
     },
     "nudgeFrequency": 5,
     "iterationNudgeThreshold": 15,

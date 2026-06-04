@@ -25,6 +25,26 @@
       }
     }
   },
+  "mcp": {
+    "context7": {
+      "enabled": false,
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "oauth": false,
+      "headers": {
+        "CONTEXT7_API_KEY": "{file:~/.config/opencode/.secrets/context7-key}"
+      }
+    },
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": false,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {file:~/.config/opencode/.secrets/github-token}"
+      }
+    }
+  },
   // https://opencode.ai/docs/formatters/
   // Opt-in: only the formatters listed below are enabled.
   // All other built-ins are explicitly disabled.
@@ -33,15 +53,19 @@
     "gofmt": {},
     "shfmt": {},
     "deno": {
-      "command": ["deno", "fmt", "--unstable-css", "--unstable-sql", "$FILE"],
+      "command": ["deno", "fmt", "--unstable-css", "--unstable-sql", "--unstable-html", "$FILE"],
       "extensions": [
         ".js",
         ".jsx",
         ".ts",
         ".tsx",
+        ".mts",
+        ".cts",
+        ".mjs",
+        ".cjs",
+        ".ipynb",
         ".json",
         ".jsonc",
-        ".md",
         ".css",
         ".scss",
         ".sass",
@@ -49,6 +73,10 @@
         ".html",
         ".sql"
       ]
+    },
+    "fantomas": {
+      "command": ["fantomas", "$FILE"],
+      "extensions": [".fs", ".fsi", ".fsx"]
     },
     // deno also supports with --unstable-component: .svelte, .vue, .astro, angular
     // deno also supports: .yaml, .yml, .ipynb, .njk, .vto, .mts, .mjs, .cts, .cjs
@@ -76,6 +104,27 @@
       "command": ["pkl", "format", "-w", "$FILE"],
       "extensions": [".pkl"]
     },
+    "stylua": {
+      "command": ["stylua", "$FILE"],
+      "extensions": [".lua"]
+    },
+    // rumdl formatter: conservative by default — only whitespace/cosmetic auto-fixes.
+    // All 75 rules report diagnostics; only Tier 1 safe rules auto-fix on save.
+    // Per-project .rumdl.toml files still control rule enable/disable.
+    "rumdl": {
+      "command": [
+        "rumdl",
+        "fmt",
+        "--fixable",
+        "MD009,MD010,MD012,MD018,MD019,MD020,MD021,MD037,MD038,MD039,MD047,MD048,MD049,MD050,MD055,MD064",
+        "$FILE"
+      ],
+      "extensions": [".md"]
+    },
+    "taplo": {
+      "command": ["taplo", "fmt", "$FILE"],
+      "extensions": [".toml"]
+    },
     "air": { "disabled": true },
     "biome": { "disabled": true },
     "cargofmt": { "disabled": true },
@@ -93,7 +142,7 @@
     "oxfmt": { "disabled": true },
     "pint": { "disabled": true },
     "rubocop": { "disabled": true },
-    "rustfmt": { "disabled": true },
+    "rustfmt": {},
     "standardrb": { "disabled": true },
     "terraform": { "disabled": true },
     "uv": { "disabled": true },
@@ -105,7 +154,7 @@
   "lsp": {
     "bash": {
       "command": ["bash-language-server", "start"],
-      "extensions": [".sh", ".bash", ".zsh", ".ksh", "PKGBUILD", "Makefile"],
+      "extensions": [".sh", ".bash", ".zsh", ".ksh", "PKGBUILD"],
       "initialization": {
         "shfmt": {
           "languageDialect": "bash"
@@ -128,7 +177,8 @@
       "disabled": true
     },
     "csharp": {
-      "command": ["roslyn-language-server", "--stdio", "--autoLoadProjects"]
+      "command": ["roslyn-language-server", "--stdio", "--autoLoadProjects"],
+      "extensions": [".cs", ".csx"]
     },
     "dart": {
       "command": ["dart", "language-server", "--lsp"],
@@ -136,18 +186,25 @@
     },
     "deno": {
       "command": ["deno", "lsp"],
-      "disabled": true
+      "extensions": [".js", ".jsx", ".ts", ".tsx", ".mts", ".cts", ".mjs", ".cjs"],
+      "disabled": false
     },
     // eslint requires eslint as a project-level npm dep to activate.
     "eslint": {
       "command": ["eslint-language-server", "--stdio"],
       "disabled": true
     },
+    "fsautocomplete": {
+      "command": ["fsautocomplete"],
+      "extensions": [".fs", ".fsi", ".fsx"]
+    },
     "gopls": {
-      "command": ["gopls"]
+      "command": ["gopls"],
+      "extensions": [".go"]
     },
     "lua-ls": {
-      "command": ["lua-language-server"]
+      "command": ["lua-language-server"],
+      "extensions": [".lua"]
     },
     "nixd": {
       "command": ["nixd"],
@@ -163,18 +220,28 @@
       "disabled": false
     },
     "razor": {
-      "command": ["roslyn-language-server", "--stdio", "--autoLoadProjects"]
+      "command": ["roslyn-language-server", "--stdio", "--autoLoadProjects"],
+      "extensions": [".razor"]
     },
     "regal": {
       "command": ["regal", "language-server"],
       "extensions": [".rego"]
     },
+    "rumdl": {
+      "command": ["rumdl", "server"],
+      "extensions": [".md"]
+    },
     "rust": {
       "command": ["rust-analyzer"],
       "disabled": true
     },
+    "taplo": {
+      "command": ["taplo", "lsp", "stdio"],
+      "extensions": [".toml"]
+    },
     "terraform": {
       "command": ["terraform-ls", "serve"],
+      "extensions": [".tf", ".tfvars"],
       "initialization": {
         "terraform": {
           "path": "/usr/bin/tofu"
@@ -185,7 +252,9 @@
       }
     },
     "typescript": {
-      "command": ["typescript-language-server", "--stdio"]
+      "command": ["typescript-language-server", "--stdio"],
+      "extensions": [".js", ".jsx", ".ts", ".tsx"],
+      "disabled": true
     },
     "yaml-ls": {
       "command": ["yaml-language-server", "--stdio"],
@@ -466,7 +535,8 @@
       "* &> /dev/null*": "allow",
       "* &>/dev/null*": "allow",
       "* 2>&1*": "allow",
-      "ctx7*": "allow"
+      "ctx7*": "allow",
+      "rtk *": "allow"
     },
 
     // -- File I/O --
@@ -508,7 +578,6 @@
   "plugin": [
     "@tarquinen/opencode-dcp",
     "opencode-supermemory",
-    "opencode-worktree",
     "opencode-notify"
   ],
   "agent": {}
