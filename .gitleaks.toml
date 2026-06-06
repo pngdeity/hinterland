@@ -1,0 +1,24 @@
+title = "hinterland dotfiles secret detection"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "system config files with numeric thresholds and sysfs paths"
+paths = [
+  '''src/etc/thermald/thermal-conf\.xml''',
+  '''src/etc/thermald/thermal-conf\.xml\.auto''',
+  '''src/etc/thermald/thermal-cpu-cdev-order\.xml''',
+  '''src/etc/thinkfan\.yaml''',
+  '''src/etc/default/grub''',
+  '''src/etc/intel-undervolt\.conf''',
+  '''src/etc/tlp\.d/01-thinkpad\.conf''',
+]
+
+[[allowlists]]
+description = "opencode config: mcp header placeholders reference external files, not inline secrets"
+paths = [
+  '''src/\.config/opencode/opencode\.jsonc''',
+  '''src/\.config/opencode/dcp\.jsonc''',
+  '''src/\.config/opencode/supermemory\.jsonc''',
+]
