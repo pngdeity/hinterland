@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!--
+Order of compensation to cool CPU only.
+intel_pstate and cpufreq are dead in HWP mode — removed.
+B0D4 safety net at 80C escalates through these when XML x86_pkg_temp zone can't hold 75C.
+-->
+<CoolingDeviceOrder>
+  <CoolingDevice>intel_powerclamp</CoolingDevice>
+  <CoolingDevice>Processor</CoolingDevice>
+  <CoolingDevice>rapl_controller</CoolingDevice>
+</CoolingDeviceOrder>

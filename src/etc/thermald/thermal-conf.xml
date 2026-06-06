@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<ThermalConfiguration>
+  <Platform>
+    <Name>T480 Undervolt Tuned</Name>
+    <ProductName>20L6S4XW00</ProductName>
+    <Preference>QUIET</Preference>
+    <ThermalZones>
+      <ThermalZone>
+        <Type>x86_pkg_temp</Type>
+        <TripPoints>
+          <TripPoint>
+            <SensorType>x86_pkg_temp</SensorType>
+            <Temperature>50000</Temperature>
+            <type>passive</type>
+            <ControlType>SEQUENTIAL</ControlType>
+            <CoolingDevice>
+              <index>1</index>
+              <type>intel_pstate</type>
+              <influence> 100 </influence>
+              <SamplingPeriod> 12 </SamplingPeriod>
+            </CoolingDevice>
+          </TripPoint>
+          <TripPoint>
+            <SensorType>x86_pkg_temp</SensorType>
+            <Temperature>75000</Temperature>
+            <type>passive</type>
+            <ControlType>SEQUENTIAL</ControlType>
+            <CoolingDevice>
+              <index>1</index>
+              <type>Processor</type>
+              <influence> 100 </influence>
+              <SamplingPeriod> 8 </SamplingPeriod>
+            </CoolingDevice>
+          </TripPoint>
+        </TripPoints>
+      </ThermalZone>
+    </ThermalZones>
+    <CoolingDevices>
+      <CoolingDevice>
+        <Type>intel_pstate</Type>
+        <MinState>0</MinState>
+        <MaxState>50</MaxState>
+        <ReadBack>0</ReadBack>
+        <AutoDownControl>1</AutoDownControl>
+      </CoolingDevice>
+      <CoolingDevice>
+        <Type>Processor</Type>
+        <MinState>0</MinState>
+        <MaxState>10</MaxState>
+        <ReadBack>0</ReadBack>
+        <AutoDownControl>1</AutoDownControl>
+      </CoolingDevice>
+    </CoolingDevices>
+  </Platform>
+</ThermalConfiguration>

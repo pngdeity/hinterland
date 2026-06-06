@@ -1,0 +1,16 @@
+sensors:
+  - hwmon: /sys/devices/platform/thinkpad_hwmon
+    indices: [1]
+  - hwmon: /sys/devices/platform/coretemp.0
+    indices: [1]
+
+fans:
+  - tpacpi: /proc/acpi/ibm/fan
+
+levels:
+  - [0,  0, 50]
+  - [1, 45, 60]
+  - [2, 55, 70]
+  - [4, 65, 78]
+  - [7, 75, 90]
+  - ["level full-speed", 85, 100]

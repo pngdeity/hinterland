@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<ThermalConfiguration>
+  <Platform>
+    <ProductName>*</ProductName>
+    <Name>T480 Undervolt Tuned</Name>
+    <Preference>QUIET</Preference>
+    <ThermalZones>
+      <ThermalZone>
+        <Type>x86_pkg_temp</Type>
+        <TripPoints>
+          <TripPoint>
+            <SensorType>x86_pkg_temp</SensorType>
+            <Temperature>75000</Temperature>
+            <type>passive</type>
+            <ControlType>SEQUENTIAL</ControlType>
+            <CoolingDevice>
+              <type>Processor</type>
+              <influence> 100 </influence>
+              <SamplingPeriod> 8 </SamplingPeriod>
+            </CoolingDevice>
+            <CoolingDevice>
+              <type>rapl_controller</type>
+              <influence> 100 </influence>
+              <SamplingPeriod> 12 </SamplingPeriod>
+            </CoolingDevice>
+          </TripPoint>
+        </TripPoints>
+      </ThermalZone>
+    </ThermalZones>
+    <CoolingDevices>
+      <CoolingDevice>
+        <Type>Processor</Type>
+        <MinState>0</MinState>
+        <MaxState>10</MaxState>
+        <ReadBack>0</ReadBack>
+        <AutoDownControl>1</AutoDownControl>
+      </CoolingDevice>
+    </CoolingDevices>
+  </Platform>
+</ThermalConfiguration>
