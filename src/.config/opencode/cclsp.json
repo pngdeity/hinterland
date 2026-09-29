@@ -64,6 +64,16 @@
       "extensions": ["dockerfile"],
       "command": ["docker-langserver", "--stdio"],
       "rootDir": "."
+    },
+    {
+      "extensions": ["pkl"],
+      "command": ["pkl-lsp"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["rego"],
+      "command": ["regal", "language-server"],
+      "rootDir": "."
     }
   ]
 }
