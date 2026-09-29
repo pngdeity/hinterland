@@ -74,6 +74,25 @@
       "extensions": ["rego"],
       "command": ["regal", "language-server"],
       "rootDir": "."
+    },
+    {
+      "extensions": ["razor", "cshtml"],
+      "command": [
+        "roslyn-language-server",
+        "--stdio",
+        "--autoLoadProjects",
+        "--extension",
+        "/opt/roslyn-language-server/Microsoft.VisualStudioCode.RazorExtension.dll"
+      ],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["tf", "tfvars"],
+      "command": ["terraform-ls", "serve"],
+      "rootDir": ".",
+      "initializationOptions": {
+        "terraform": { "path": "/usr/bin/tofu" }
+      }
     }
   ]
 }
