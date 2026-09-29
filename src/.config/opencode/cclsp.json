@@ -1,0 +1,34 @@
+{
+  "servers": [
+    {
+      "extensions": ["ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs"],
+      "command": ["typescript-language-server", "--stdio"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["py", "pyi"],
+      "command": ["pyright-langserver", "--stdio"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["go"],
+      "command": ["gopls"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["yaml", "yml"],
+      "command": ["yaml-language-server", "--stdio"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["sh", "bash"],
+      "command": ["bash-language-server", "start"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["lua"],
+      "command": ["lua-language-server"],
+      "rootDir": "."
+    }
+  ]
+}

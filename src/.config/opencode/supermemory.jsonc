@@ -1,10 +1,15 @@
 {
-  "apiKey": "",
-  "similarityThreshold": 0.6,
-  "maxMemories": 5,
-  "maxProjectMemories": 10,
-  "maxProfileItems": 5,
+  // Supermemory plugin config (V2). API key comes from SUPERMEMORY_API_KEY.
+  // Note: this file must remain valid JSON (the plugin strips // comments but
+  // does not permit trailing commas).
+  "baseUrl": "https://api.supermemory.ai",
+  "similarityThreshold": 0.7,
+  "maxMemories": 3,
+  "maxProjectMemories": 5,
+  "maxProfileItems": 3,
   "injectProfile": true,
-  "containerTagPrefix": "opencode",
-  "compactionThreshold": 0.80
+  "recallMode": "advisory",
+  "captureEveryNTurns": 10,
+  "compactionEnabled": true,
+  "containerTagPrefix": "opencode"
 }

@@ -1,0 +1,113 @@
+{
+  // OpenCode CLI/TUI settings.
+  //
+  // Key list verified against OpenCode v2.0.18.
+  // This file accepts comments and trailing commas (parsed as JSONC).
+  // Unknown keys are rejected by OpenCode.
+  //
+  // Live keys below are deliberate choices; commented keys show defaults
+  // that are left unchanged. To change one, uncomment and edit it.
+  "$schema": "https://opencode.ai/v2/cli.json",
+
+  // Values: any theme name. Default: "opencode".
+  "theme": {
+    "name": "tokyonight"
+    // "mode": "system"        // system | light | dark
+  },
+
+  "keybinds": {
+    "leader": "ctrl+x"
+  },
+
+  // Ordered enablement directive list. A leading "-" disables an entry.
+  // TUI components exposed by plugins in opencode.json(c) load automatically.
+  "plugins": [
+    "./plugins/tui-status"
+    // "-supermemory.tui"      // suppress Supermemory in-terminal toasts (also drops its footer status)
+    // "-opencode.notifications" // suppress built-in desktop notifications
+  ],
+
+  // Default 2000 (ms).
+  "leader": {
+    "timeout": 2000
+  },
+
+  // Default speed 3, acceleration false.
+  "scroll": {
+    "speed": 3,
+    "acceleration": false
+  },
+
+  // Alerts. These govern system notifications and sounds only; they do NOT
+  // affect in-terminal toasts, which individual plugins raise themselves.
+  "attention": {
+    "notifications": true, // default false; system notification when the terminal is blurred
+    "sound": false, // default false
+    // "volume": 0.4        // default 0.4 (0-1)
+    "sound_pack": "opencode.default"
+    // "sounds": {}         // per-event overrides: default, question, permission, error, done, subagent_done
+  },
+
+  // view: auto | split | unified (default auto)
+  // wrap: none | word (default word)
+  "diffs": {
+    "wrap": "word",
+    "view": "unified"
+    // "tree": true         // file tree (default true)
+    // "single": false      // single-column view (default false)
+  },
+
+  // sidebar: hide | auto (default auto)
+  // thinking: hide | show (default hide)
+  // markdown: source | rendered (default rendered)
+  // grouping: none | auto (default auto)
+  // verbosity: low | medium | high (default medium)
+  // new_location: launch | inherit (default launch)
+  // permissions: prompt | autoaccept (default prompt)
+  "session": {
+    "sidebar": "auto",
+    "scrollbar": false,
+    "thinking": "show",
+    "verbosity": "high" // default "medium"
+    // "markdown": "rendered"
+    // "grouping": "auto"
+    // "image_preview": false
+    // "tps": true
+    // "new_location": "launch"
+    // "permissions": "prompt"
+  },
+
+  "animations": true, // default false
+  "mouse": true,
+
+  // Prompt input.
+  // editor: bool (default true) — EditorContext capture. Disabled: it is
+  //   Zed-only (ZED_TERM / TERM_PROGRAM=zed) and never detects Neovim.
+  // image_preview: bool (default false)
+  // paste: compact | full (default compact)
+  "prompt": {
+    "image_preview": true, // default false
+    "editor": false // disable Zed-only EditorContext capture
+    // "paste": "compact"
+  }
+
+  // Tabs.
+  // mode: off | on | auto (default auto)
+  // scope: cwd | global (default cwd)
+  // layout: horizontal | vertical (default horizontal)
+  // indicators: status | numbers (default status)
+  // "tabs": { "mode": "auto", "scope": "cwd", "layout": "horizontal", "indicators": "status" }
+
+  // Terminal.
+  // title: bool (default true)
+  // copy: manual | select (default select)
+  // "terminal": { "title": true, "copy": "select" }
+
+  // Mini.
+  // work_spinner: any spinner name (default "block-soft-slide")
+  // "mini": { "work_spinner": "block-soft-slide" }
+
+  // Debug.
+  // devtools: bool (default false)
+  // "debug": { "devtools": false }
+}

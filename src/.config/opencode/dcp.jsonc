@@ -1,47 +1,54 @@
 {
   "$schema": "https://raw.githubusercontent.com/Opencode-DCP/opencode-dynamic-context-pruning/master/dcp.schema.json",
   "enabled": true,
-  "autoUpdate": true,
+  "autoUpdate": false,
   "debug": false,
+
+  // ---- Turn Protection ----
   "turnProtection": {
     "enabled": true,
-    "turns": 12
+    "turns": 4,
   },
   "pruneNotification": "detailed",
   "pruneNotificationType": "chat",
+
+  // ---- Commands ----
   "commands": {
     "enabled": true,
-    "protectedTools": []
+    "protectedTools": [],
   },
+
+  // ---- Strategies ----
   "strategies": {
     "deduplication": {
       "enabled": true,
-      "protectedTools": []
+      "protectedTools": [],
     },
     "purgeErrors": {
       "enabled": true,
       "turns": 4,
-      "protectedTools": []
-    }
+      "protectedTools": [],
+    },
   },
+
+  // ---- Compression ----
   "compress": {
     "mode": "range",
     "permission": "allow",
-    "showCompression": true,
-    "summaryBuffer": false,
-    "maxContextLimit": "30%",
-    "minContextLimit": "5%",
-    "modelMaxLimits": {
-      "deepseek/deepseek-v4-pro": "30%"
-    },
-    "modelMinLimits": {
-      "deepseek/deepseek-v4-pro": "5%"
-    },
-    "nudgeFrequency": 5,
-    "iterationNudgeThreshold": 15,
-    "nudgeForce": "soft",
-    "protectedTools": [],
+    "showCompression": false,
+    "summaryBuffer": true,
+    "maxContextLimit": 300000,
+    "minContextLimit": 100000,
+    "nudgeFrequency": 10,
+    "iterationNudgeThreshold": 25,
+    "nudgeForce": "strong",
+    "protectedTools": ["task", "skill", "todowrite", "todoread"],
     "protectTags": false,
-    "protectUserMessages": false
-  }
+    "protectUserMessages": false,
+  },
+
+  // ---- Experimental ----
+  "experimental": {
+    "customPrompts": true,
+  },
 }

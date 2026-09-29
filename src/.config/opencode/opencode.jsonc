@@ -1,59 +1,125 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "deepseek/deepseek-v4-pro",
-  "small_model": "deepseek/deepseek-v4-flash",
-  "enabled_providers": ["deepseek", "github-copilot"],
-  "provider": {
+
+  // ======================================== //
+  // Models & Providers                       //
+  // ======================================== //
+
+  "model": "deepseek/deepseek-flash",
+  "default_agent": "plan",
+  "update": "notify",
+
+  // Cap retained tool output to keep context lean (pairs with DCP compaction).
+  "tool_output": { "max_lines": 2000, "max_bytes": 40960 },
+
+  // Do not let dependency/build/cache churn trigger filesystem updates.
+  "watcher": {
+    "ignore": [
+      "**/node_modules/**",
+      "**/.git/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/target/**",
+      "**/.venv/**",
+      "**/__pycache__/**",
+      "**/coverage/**",
+      "**/.cache/**",
+      "**/*.log",
+    ],
+  },
+
+  // Pin the web-search backend to Exa; skips the first-use selection prompt and
+  // avoids Parallel's recurring 429s (which `random` logged as errors).
+  "websearch": { "provider": "exa" },
+
+  // Native provider policy (replaces V1 `enabled_providers`) plus hard permission
+  // rules. Policies only tighten and are evaluated broad-first, last match wins.
+  "experimental": {
+    "policies": [
+      { "action": "provider.use", "resource": "*", "effect": "deny" },
+      { "action": "provider.use", "resource": "deepseek", "effect": "allow" },
+      { "action": "provider.use", "resource": "zhipuai", "effect": "allow" },
+      // Never read or write dotenv secret files; keep `.env.example` readable.
+      { "action": "permission", "resource": "read:*.env", "effect": "deny" },
+      { "action": "permission", "resource": "read:*.env.*", "effect": "deny" },
+      { "action": "permission", "resource": "read:*.env.example", "effect": "allow" },
+      { "action": "permission", "resource": "edit:*.env", "effect": "deny" },
+      { "action": "permission", "resource": "edit:*.env.*", "effect": "deny" },
+      { "action": "permission", "resource": "edit:*.env.example", "effect": "allow" },
+    ],
+  },
+  "providers": {
     "deepseek": {
       "models": {
+        "deepseek-flash": {
+          "cost": {
+            "input": 0.15,
+            "output": 0.6,
+            "cache": { "read": 0.003, "write": 0.15 },
+          },
+        },
+        "deepseek-v4.1-flash": {
+          "modelID": "deepseek-flash",
+          "name": "DeepSeek V4.1 Flash",
+          "cost": {
+            "input": 0.15,
+            "output": 0.6,
+            "cache": { "read": 0.003, "write": 0.15 },
+          },
+        },
         "deepseek-v4-pro": {
           "cost": {
             "input": 0.435,
             "output": 0.87,
-            "cache_read": 0.003625,
-            "cache_write": 0.435
-          }
+            "cache": { "read": 0.003625, "write": 0.435 },
+          },
         },
         "deepseek-v4-flash": {
           "cost": {
             "input": 0.14,
             "output": 0.28,
-            "cache_read": 0.0028,
-            "cache_write": 0.14
-          }
-        }
-      }
-    }
-  },
-  "mcp": {
-    "context7": {
-      "enabled": false,
-      "type": "remote",
-      "url": "https://mcp.context7.com/mcp",
-      "oauth": false,
-      "headers": {
-        "CONTEXT7_API_KEY": "{file:~/.config/opencode/.secrets/context7-key}"
-      }
+            "cache": { "read": 0.0028, "write": 0.14 },
+          },
+        },
+      },
     },
-    "github": {
-      "type": "remote",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "enabled": false,
-      "oauth": false,
-      "headers": {
-        "Authorization": "Bearer {file:~/.config/opencode/.secrets/github-token}"
-      }
-    }
+    "zhipuai": {
+      "package": "aisdk:@ai-sdk/openai-compatible",
+      "name": "ZhipuAI",
+      "settings": {
+        "baseURL": "https://api.z.ai/api/paas/v4",
+      },
+      "models": {
+        "glm-5.2": {
+          "name": "GLM-5.2",
+          "limit": {
+            "context": 1000000,
+            "output": 131072,
+          },
+          "cost": {
+            "input": 1.4,
+            "output": 4.4,
+          },
+        },
+      },
+    },
   },
-  // https://opencode.ai/docs/formatters/
-  // Opt-in: only the formatters listed below are enabled.
-  // All other built-ins are explicitly disabled.
+
+  // ======================================== //
+  // Formatters                               //
+  // ======================================== //
+
   "formatter": {
-    "ruff": {},
-    "gofmt": {},
-    "shfmt": {},
+    "csharpier": {
+      "command": ["csharpier", "format", "$FILE"],
+      "extensions": [".cs", ".csx", ".razor"],
+    },
     "deno": {
-      "command": ["deno", "fmt", "--unstable-css", "--unstable-sql", "--unstable-html", "$FILE"],
+      "command": ["deno", "fmt", "--unstable-sql", "$FILE"],
+      "extensions": [".sql", ".ipynb"],
+    },
+    "oxfmt": {
+      "command": ["bun", "x", "oxfmt@0.70.0", "$FILE"],
       "extensions": [
         ".js",
         ".jsx",
@@ -63,522 +129,506 @@
         ".cts",
         ".mjs",
         ".cjs",
-        ".ipynb",
         ".json",
         ".jsonc",
         ".css",
         ".scss",
         ".sass",
         ".less",
-        ".html",
-        ".sql"
-      ]
+      ],
     },
-    "fantomas": {
-      "command": ["fantomas", "$FILE"],
-      "extensions": [".fs", ".fsi", ".fsx"]
-    },
-    // deno also supports with --unstable-component: .svelte, .vue, .astro, angular
-    // deno also supports: .yaml, .yml, .ipynb, .njk, .vto, .mts, .mjs, .cts, .cjs
-    "prettier": { "disabled": true },
-    "yamlfmt": {
-      "command": ["yamlfmt", "$FILE"],
-      "extensions": [".yaml", ".yml"]
-    },
-    "xmllint": {
-      "command": ["xmllint", "--format", "--output", "$FILE", "$FILE"],
-      "extensions": [".xml", ".csproj", ".slnx"]
-    },
-    "tofu": {
-      "command": ["tofu", "fmt", "$FILE"],
-      "extensions": [".tf", ".tfvars"]
-    },
-    // C#: dotnet format whitespace --folder works but requires relative paths in --include.
-    // csharpier (dotnet tool install -g csharpier) handles single files natively. Decide later.
-    // mediawiki: wikiparser-node (npm) has lint()+fix:true for 40+ rules. npx -p wikiparser-node node -e "..." $FILE. Decide later.
-    "regal": {
-      "command": ["regal", "fix", "$FILE"],
-      "extensions": [".rego"]
-    },
-    "pkl": {
-      "command": ["pkl", "format", "-w", "$FILE"],
-      "extensions": [".pkl"]
-    },
-    "stylua": {
-      "command": ["stylua", "$FILE"],
-      "extensions": [".lua"]
-    },
-    // rumdl formatter: conservative by default — only whitespace/cosmetic auto-fixes.
-    // All 75 rules report diagnostics; only Tier 1 safe rules auto-fix on save.
-    // Per-project .rumdl.toml files still control rule enable/disable.
+    "fantomas": { "command": ["fantomas", "$FILE"], "extensions": [".fs", ".fsi", ".fsx"] },
+    "gofmt": {},
+    "pkl": { "command": ["pkl", "format", "-w", "$FILE"], "extensions": [".pkl"] },
+    "regal": { "command": ["regal", "fix", "$FILE"], "extensions": [".rego"] },
+    "ruff": {},
+    // The object form also enables every built-in; `uv` duplicates `ruff` for
+    // `.py` and logged a second failure per file. Disabled.
+    "uv": { "disabled": true },
     "rumdl": {
       "command": [
         "rumdl",
         "fmt",
         "--fixable",
         "MD009,MD010,MD012,MD018,MD019,MD020,MD021,MD037,MD038,MD039,MD047,MD048,MD049,MD050,MD055,MD064",
-        "$FILE"
+        "$FILE",
       ],
-      "extensions": [".md"]
+      "extensions": [".md"],
     },
-    "taplo": {
-      "command": ["taplo", "fmt", "$FILE"],
-      "extensions": [".toml"]
-    },
-    "air": { "disabled": true },
-    "biome": { "disabled": true },
-    "cargofmt": { "disabled": true },
-    "clang-format": { "disabled": true },
-    "cljfmt": { "disabled": true },
-    "dart": { "disabled": true },
-    "dfmt": { "disabled": true },
-    "gleam": { "disabled": true },
-    "htmlbeautifier": { "disabled": true },
-    "ktlint": { "disabled": true },
-    "mix": { "disabled": true },
-    "nixfmt": { "disabled": true },
-    "ocamlformat": { "disabled": true },
-    "ormolu": { "disabled": true },
-    "oxfmt": { "disabled": true },
-    "pint": { "disabled": true },
-    "rubocop": { "disabled": true },
     "rustfmt": {},
-    "standardrb": { "disabled": true },
-    "terraform": { "disabled": true },
-    "uv": { "disabled": true },
-    "zig": { "disabled": true }
+    "shfmt": {},
+    "stylua": { "command": ["stylua", "$FILE"], "extensions": [".lua"] },
+    "superhtml": { "command": ["superhtml", "fmt", "$FILE"], "extensions": [".html"] },
+    "taplo": { "command": ["taplo", "fmt", "$FILE"], "extensions": [".toml"] },
+    "tofu": { "command": ["tofu", "fmt", "$FILE"], "extensions": [".tf", ".tfvars"] },
+    "xmllint": {
+      "command": ["xmllint", "--format", "--output", "$FILE", "$FILE"],
+      "extensions": [".xml", ".csproj", ".slnx"],
+    },
+    "yamlfmt": { "command": ["yamlfmt", "$FILE"], "extensions": [".yaml", ".yml"] },
   },
-  // https://opencode.ai/docs/lsp/
-  // System-installed LSP servers with no auto-download.
-  // Disabled servers preserve their command for quick re-enabling.
-  "lsp": {
-    "bash": {
-      "command": ["bash-language-server", "start"],
-      "extensions": [".sh", ".bash", ".zsh", ".ksh", "PKGBUILD"],
-      "initialization": {
-        "shfmt": {
-          "languageDialect": "bash"
-        }
-      }
-    },
-    // Requires: npm i -g dockerfile-language-server-nodejs
-    "docker": {
-      "command": ["docker-langserver", "--stdio"],
-      "extensions": [".dockerfile", "Dockerfile", "Containerfile"]
-    },
-    // Requires: cargo install just-lsp or sudo pacman -S just-lsp
-    "just": {
-      "command": ["just-lsp"],
-      "extensions": ["Justfile", "justfile"]
-    },
-    // No LSP exists for Makefiles. Make is too dynamic (macros, eval, filesystem-dependent targets).
-    "clangd": {
-      "command": ["clangd", "--background-index", "--clang-tidy"],
-      "disabled": true
-    },
-    "csharp": {
-      "command": ["roslyn-language-server", "--stdio", "--autoLoadProjects"],
-      "extensions": [".cs", ".csx"]
-    },
-    "dart": {
-      "command": ["dart", "language-server", "--lsp"],
-      "disabled": true
-    },
-    "deno": {
-      "command": ["deno", "lsp"],
-      "extensions": [".js", ".jsx", ".ts", ".tsx", ".mts", ".cts", ".mjs", ".cjs"],
-      "disabled": false
-    },
-    // eslint requires eslint as a project-level npm dep to activate.
-    "eslint": {
-      "command": ["eslint-language-server", "--stdio"],
-      "disabled": true
-    },
-    "fsautocomplete": {
-      "command": ["fsautocomplete"],
-      "extensions": [".fs", ".fsi", ".fsx"]
-    },
-    "gopls": {
-      "command": ["gopls"],
-      "extensions": [".go"]
-    },
-    "lua-ls": {
-      "command": ["lua-language-server"],
-      "extensions": [".lua"]
-    },
-    "nixd": {
-      "command": ["nixd"],
-      "disabled": true
-    },
-    "pkl": {
-      "command": ["pkl-lsp"],
-      "extensions": [".pkl", ".pcf"]
-    },
-    "pyright": {
-      "command": ["pyright-langserver", "--stdio"],
-      "extensions": [".py", ".pyi"],
-      "disabled": false
-    },
-    "razor": {
-      "command": ["roslyn-language-server", "--stdio", "--autoLoadProjects"],
-      "extensions": [".razor"]
-    },
-    "regal": {
-      "command": ["regal", "language-server"],
-      "extensions": [".rego"]
-    },
-    "rumdl": {
-      "command": ["rumdl", "server"],
-      "extensions": [".md"]
-    },
-    "rust": {
-      "command": ["rust-analyzer"],
-      "disabled": true
-    },
-    "taplo": {
-      "command": ["taplo", "lsp", "stdio"],
-      "extensions": [".toml"]
-    },
-    "terraform": {
-      "command": ["terraform-ls", "serve"],
-      "extensions": [".tf", ".tfvars"],
-      "initialization": {
-        "terraform": {
-          "path": "/usr/bin/tofu"
-        },
-        "experimentalFeatures": {
-          "prefillRequiredFields": true
-        }
-      }
-    },
-    "typescript": {
-      "command": ["typescript-language-server", "--stdio"],
-      "extensions": [".js", ".jsx", ".ts", ".tsx"],
-      "disabled": true
-    },
-    "yaml-ls": {
-      "command": ["yaml-language-server", "--stdio"],
-      "initialization": {
-        "yaml": {
-          "schemaStore": { "enable": true },
-          "keyOrdering": true,
-          "schemas": {
-            "https://raw.githubusercontent.com/pngdeity/apm-user-repository/main/schemas/apm.json": [
-              "**/apm.yml"
-            ]
-          }
-        }
-      }
-    }
-  },
-  // https://opencode.ai/docs/config/#compaction
-  "compaction": {
-    "auto": false,
-    "prune": false,
-    "reserved": 10000
-  },
-  // https://opencode.ai/docs/permissions/
-  // Merge order: opencode defaults → values below → per-agent overrides.
-  // An agent inherits everything from this block unless it explicitly overrides a key.
+
+  // ======================================== //
+  // Code Intelligence                        //
+  // ======================================== //
+
+  // OpenCode V2 does not run language servers; the former `lsp` block was removed.
+  // Code intelligence comes from MCP: Serena (`serena.*`) and cclsp (disabled).
+
+  // ======================================== //
+  // Compaction (built-in)                    //
+  // ======================================== //
+
+  // DCP (dcp.jsonc) trims incrementally, but its active summaries only
+  // accumulate: each non-nesting compression raises the floor. Built-in
+  // compaction is the tandem reset — it replaces older active context with a
+  // checkpoint, which deactivates the DCP blocks whose messages fall outside
+  // the new baseline.
   //
-  // -- Shell commands --
-  "permission": {
-    "bash": {
-      "*": "ask",
-      "echo*": "allow",
-      "pwd*": "allow",
-      "env --help*": "allow",
-      "env --version*": "allow",
-      "date*": "allow",
-      "stat*": "allow",
-      "tree*": "allow",
-      "wc*": "allow",
-      "sort*": "allow",
-      "tail*": "allow",
-      "uniq*": "allow",
-      "cat*": "allow",
-      "cut*": "allow",
-      "tr *": "allow",
-      "true*": "allow",
-      "paste*": "allow",
-      "column*": "allow",
-      "col *": "allow",
-      "diff*": "allow",
-      "jq*": "allow",
-      "yq*": "allow",
-      "rg*": "allow",
-      "ripgrep*": "allow",
-      "fd*": "allow",
-      "fdfind*": "allow",
-      "realpath*": "allow",
-      "dirname*": "allow",
-      "basename*": "allow",
-      "type*": "allow",
-      "command*": "allow",
-      "conftest parse*": "allow",
-      "conftest reformat*": "allow",
-      "conftest test*": "allow",
-      "conftest verify*": "allow",
-      "id*": "allow",
-      "info*": "allow",
-      "uname*": "allow",
-      "hostname*": "allow",
-      "ps*": "allow",
-      "pgrep*": "allow",
-      "lsof*": "allow",
-      "sha256sum*": "allow",
-      "sha1sum*": "allow",
-      "md5sum*": "allow",
-      "base64*": "allow",
-      "xxd*": "allow",
-      "hexdump*": "allow",
-      "readelf*": "allow",
-      "strings*": "allow",
-      "pip show*": "allow",
-      "pip list*": "allow",
-      "pkl analyze*": "allow",
-      "pkl eval*": "allow",
-      "pkl format*": "allow",
-      "pkl test*": "allow",
-      "ls*": "allow",
-      "find * -name*": "allow",
-      "find * -type*": "allow",
-      "find * -maxdepth*": "allow",
-      "find * -path*": "allow",
-      "find * -mindepth*": "allow",
-      "grep*": "allow",
-      "which*": "allow",
-      "printf*": "allow",
-      "file*": "allow",
-      "bat*": "allow",
-      "head*": "allow",
-      "man*": "allow",
-      "readlink*": "allow",
-      "mkdir*": "allow",
-      "npm -h*": "allow",
-      "npm --help*": "allow",
-      "npm -v*": "allow",
-      "npm --version*": "allow",
-      "npm bugs*": "allow",
-      "npm config get*": "allow",
-      "npm config list*": "allow",
-      "npm diff*": "allow",
-      "npm doctor*": "allow",
-      "npm explain*": "allow",
-      "npm fund*": "allow",
-      "npm help*": "allow",
-      "npm info*": "allow",
-      "npm list*": "allow",
-      "npm ls*": "allow",
-      "npm outdated*": "allow",
-      "npm pack --dry-run*": "allow",
-      "npm ping*": "allow",
-      "npm prefix*": "allow",
-      "npm repo*": "allow",
-      "npm root*": "allow",
-      "npm sbom*": "allow",
-      "npm search*": "allow",
-      "npm show*": "allow",
-      "npm view*": "allow",
-      "npm whoami*": "allow",
-      "npm why*": "allow",
-      "npx --help*": "allow",
-      "npx -h*": "allow",
-      "npx -v*": "allow",
-      "npx --version*": "allow",
-      "tar t*": "allow",
-      "tar --list*": "allow",
-      "gzip -l*": "allow",
-      "gzip -t*": "allow",
-      "gunzip -l*": "allow",
-      "gunzip -t*": "allow",
-      "unzip -l*": "allow",
-      "unzip -t*": "allow",
-      "apropos*": "allow",
-      // -- Git read-only --
-      "git status*": "allow",
-      "git log*": "allow",
-      "git diff*": "allow",
-      "git show*": "allow",
-      "git branch*": "allow",
-      "git branch -d*": "ask",
-      "git branch -D*": "ask",
-      "git branch --delete*": "ask",
-      "git branch -m*": "ask",
-      "git branch -M*": "ask",
-      "git branch -c*": "ask",
-      "git branch --copy*": "ask",
-      "git branch -u*": "ask",
-      "git branch --edit-description*": "ask",
-      "git tag*": "allow",
-      "git tag -d*": "ask",
-      "git tag --delete*": "ask",
-      "git tag -a*": "ask",
-      "git tag -s*": "ask",
-      "git tag -f*": "ask",
-      "git stash list*": "allow",
-      "git stash show*": "allow",
-      "git reflog*": "allow",
-      "git blame*": "allow",
-      "git grep*": "allow",
-      "git ls-files*": "allow",
-      "git ls-tree*": "allow",
-      "git ls-remote*": "allow",
-      "git rev-parse*": "allow",
-      "git rev-list*": "allow",
-      "git describe*": "allow",
-      "git remote -v*": "allow",
-      "git remote show*": "allow",
-      "git config --get*": "allow",
-      "git config --get-regexp*": "allow",
-      "git config --list*": "allow",
-      "git worktree list*": "allow",
-      "git shortlog*": "allow",
-      "git for-each-ref*": "allow",
-      "git merge-base*": "allow",
-      "git cherry*": "allow",
-      "git name-rev*": "allow",
-      "git cat-file*": "allow",
-      "git count-objects*": "allow",
-      "git submodule status*": "allow",
-      "git notes list*": "allow",
-      "git notes show*": "allow",
-      "git check-ignore*": "allow",
-      "git check-attr*": "allow",
-      "git verify-commit*": "allow",
-      "git verify-tag*": "allow",
-      "git range-diff*": "allow",
-      "git help*": "allow",
-      "go vet*": "allow",
-      "gh --help*": "allow",
-      "gh -h*": "allow",
-      "gh --version*": "allow",
-      "gh api * --method GET*": "allow",
-      "gh api * -X GET*": "allow",
-      "gh auth status*": "allow",
-      "gh copilot suggest*": "allow",
-      "gh gist list*": "allow",
-      "gh gist view*": "allow",
-      "gh issue list*": "allow",
-      "gh issue status*": "allow",
-      "gh issue view*": "allow",
-      "gh label list*": "allow",
-      "gh pr checks*": "allow",
-      "gh pr diff*": "allow",
-      "gh pr list*": "allow",
-      "gh pr status*": "allow",
-      "gh pr view*": "allow",
-      "gh release list*": "allow",
-      "gh release view*": "allow",
-      "gh repo list*": "allow",
-      "gh repo view*": "allow",
-      "gh run list*": "allow",
-      "gh run view*": "allow",
-      "gh search *": "allow",
-      "gh workflow list*": "allow",
-      "gh workflow view*": "allow",
-      "gh variable list*": "allow",
-      "copilot --help*": "allow",
-      "copilot -h*": "allow",
-      "copilot --version*": "allow",
-      "copilot -v*": "allow",
-      "copilot version*": "allow",
-      "copilot help*": "allow",
-      "copilot completion*": "allow",
-      "copilot update*": "allow",
-      "gh copilot --help*": "allow",
-      "gh copilot -h*": "allow",
-      "gh copilot --version*": "allow",
-      "gh copilot -v*": "allow",
-      "gh copilot version*": "allow",
-      "gh copilot help*": "allow",
-      "gh copilot completion*": "allow",
-      "gh copilot --remove*": "allow",
-      "yay -F*": "allow",
-      "yay -Q*": "allow",
-      "yay -T*": "allow",
-      "yay -P*": "allow",
-      "yay -Gp*": "allow",
-      "yay -h*": "allow",
-      "yay --help*": "allow",
-      "yay -V*": "allow",
-      "yay --version*": "allow",
-      "pacman -F*": "allow",
-      "pacman -Q*": "allow",
-      "pacman -T*": "allow",
-      "pacman -h*": "allow",
-      "pacman --help*": "allow",
-      "pacman -V*": "allow",
-      "pacman --version*": "allow",
-      "uv pip list*": "allow",
-      "uv pip show*": "allow",
-      "uv pip freeze*": "allow",
-      "uv pip tree*": "allow",
-      "uv tool list*": "allow",
-      "uv tool dir*": "allow",
-      "uv cache dir*": "allow",
-      "uv python list*": "allow",
-      "uv python find*": "allow",
-      "uv tree*": "allow",
-      "uv lock --check*": "allow",
-      "uv lock --check-exists*": "allow",
-      "uv auth token*": "allow",
-      "uv auth dir*": "allow",
-      "uv help*": "allow",
-      "uv --help*": "allow",
-      "uv -V*": "allow",
-      "echo* >*": "ask",
-      "*>*": "ask",
-      "*2>/dev/null*": "allow",
-      "* 2> /dev/null*": "allow",
-      "*>/dev/null 2>&1*": "allow",
-      "* &> /dev/null*": "allow",
-      "* &>/dev/null*": "allow",
-      "* 2>&1*": "allow",
-      "ctx7*": "allow",
-      "rtk *": "allow"
+  // The auto ceiling is `contextLimit - max(output reserve, buffer)`; the
+  // output reserve caps at 32000, so on the 1M-token models used here `buffer`
+  // is the effective control. buffer 350000 => ceiling ~650000, roughly 190K
+  // above the worst observed DCP tolerance (maxContextLimit 300000 + floor).
+  "compaction": {
+    "auto": true,
+    "buffer": 350000,
+    "keep": {
+      "tokens": 40000,
     },
-
-    // -- File I/O --
-    "webfetch": "allow",
-    "websearch": "allow",
-    "read": {
-      "*": "allow",
-      "*.env": "ask",
-      "*.env.*": "ask",
-      "**/.env*": "ask",
-      "*.env.example": "allow"
-    },
-
-    // -- Agent behavior --
-    "question": "allow",
-    "doom_loop": "ask",
-
-    // -- Plan / repo (plan_enter/exit/clone match opencode defaults, made explicit) --
-    "plan_enter": "deny",
-    "plan_exit": "deny",
-    "repo_clone": "deny",
-    "repo_overview": "ask",
-
-    // -- External paths --
-    "external_directory": {
-      "*": "ask",
-      "~/.local/share/opencode/tool-output/*": "allow",
-      "/tmp/opencode/*": "allow",
-      "~/.agents/skills/*": "allow",
-      "/tmp/*": "allow"
-    },
-
-    // -- Skills --
-    "skill": {
-      "*": "allow"
-    }
   },
-  // https://opencode.ai/docs/plugins/
-  "plugin": [
-    "@tarquinen/opencode-dcp",
-    "opencode-supermemory",
-    "opencode-notify"
+
+  // ======================================== //
+  // Permissions                              //
+  // ======================================== //
+
+  // NOTATION: this file is JSONC, so every rule here uses the object form
+  // `{ "action": ..., "resource": ..., "effect": ... }`. YAML frontmatter lists
+  // (agents/*.md) express the same rules as `- action: ...` mappings. Never mix
+  // forms within one array.
+  //
+  // LAYERING: effective rules = built-in base policy, then this global array,
+  // then the agent's own `permissions` delta. The LAST matching rule wins; a
+  // deny always beats an allow; no match falls through to `ask`.
+  //
+  // ORDER: broad rules first, specific exceptions after.
+  // Actions: `shell` (was bash), `subagent` (was task), `edit` (write/patch),
+  // plus read/webfetch/websearch/question/skill/external_directory.
+  "permissions": [
+    // ---- Shell: default ask ----
+    // Effect-class order below: default ask -> broad allows -> targeted asks
+    // -> denies last. Keep new allows above the deny block ("Forbidden tools").
+    { "action": "shell", "resource": "*", "effect": "ask" },
+
+    // ---- Read-only system inspection ----
+    { "action": "shell", "resource": "echo*", "effect": "allow" },
+    { "action": "shell", "resource": "pwd*", "effect": "allow" },
+    { "action": "shell", "resource": "env --help*", "effect": "allow" },
+    { "action": "shell", "resource": "env --version*", "effect": "allow" },
+    { "action": "shell", "resource": "date*", "effect": "allow" },
+    { "action": "shell", "resource": "stat*", "effect": "allow" },
+    { "action": "shell", "resource": "tree*", "effect": "allow" },
+    { "action": "shell", "resource": "wc*", "effect": "allow" },
+    { "action": "shell", "resource": "sort*", "effect": "allow" },
+    { "action": "shell", "resource": "tail*", "effect": "allow" },
+    { "action": "shell", "resource": "uniq*", "effect": "allow" },
+    { "action": "shell", "resource": "cat*", "effect": "allow" },
+    { "action": "shell", "resource": "cut*", "effect": "allow" },
+    { "action": "shell", "resource": "tr*", "effect": "allow" },
+    { "action": "shell", "resource": "true*", "effect": "allow" },
+    { "action": "shell", "resource": "paste*", "effect": "allow" },
+    { "action": "shell", "resource": "column*", "effect": "allow" },
+    { "action": "shell", "resource": "col*", "effect": "allow" },
+    { "action": "shell", "resource": "diff*", "effect": "allow" },
+    { "action": "shell", "resource": "jq*", "effect": "allow" },
+    { "action": "shell", "resource": "yq*", "effect": "allow" },
+    { "action": "shell", "resource": "rg*", "effect": "allow" },
+    { "action": "shell", "resource": "ripgrep*", "effect": "allow" },
+    { "action": "shell", "resource": "fd*", "effect": "allow" },
+    { "action": "shell", "resource": "fdfind*", "effect": "allow" },
+    { "action": "shell", "resource": "realpath*", "effect": "allow" },
+    { "action": "shell", "resource": "dirname*", "effect": "allow" },
+    { "action": "shell", "resource": "basename*", "effect": "allow" },
+    { "action": "shell", "resource": "type*", "effect": "allow" },
+    { "action": "shell", "resource": "command*", "effect": "allow" },
+    { "action": "shell", "resource": "conftest parse*", "effect": "allow" },
+    { "action": "shell", "resource": "conftest reformat*", "effect": "allow" },
+    { "action": "shell", "resource": "id*", "effect": "allow" },
+    { "action": "shell", "resource": "info*", "effect": "allow" },
+    { "action": "shell", "resource": "uname*", "effect": "allow" },
+    { "action": "shell", "resource": "hostname*", "effect": "allow" },
+    { "action": "shell", "resource": "ps*", "effect": "allow" },
+    { "action": "shell", "resource": "pgrep*", "effect": "allow" },
+    { "action": "shell", "resource": "lsof*", "effect": "allow" },
+    { "action": "shell", "resource": "sha256sum*", "effect": "allow" },
+    { "action": "shell", "resource": "sha1sum*", "effect": "allow" },
+    { "action": "shell", "resource": "md5sum*", "effect": "allow" },
+    { "action": "shell", "resource": "base64*", "effect": "allow" },
+    { "action": "shell", "resource": "xxd*", "effect": "allow" },
+    { "action": "shell", "resource": "hexdump*", "effect": "allow" },
+    { "action": "shell", "resource": "readelf*", "effect": "allow" },
+    { "action": "shell", "resource": "strings*", "effect": "allow" },
+    { "action": "shell", "resource": "pkl analyze*", "effect": "allow" },
+    { "action": "shell", "resource": "pkl eval*", "effect": "allow" },
+    { "action": "shell", "resource": "pkl test*", "effect": "allow" },
+    { "action": "shell", "resource": "ls*", "effect": "allow" },
+    { "action": "shell", "resource": "find * -name*", "effect": "allow" },
+    { "action": "shell", "resource": "find * -type*", "effect": "allow" },
+    { "action": "shell", "resource": "find * -maxdepth*", "effect": "allow" },
+    { "action": "shell", "resource": "find * -path*", "effect": "allow" },
+    { "action": "shell", "resource": "find * -mindepth*", "effect": "allow" },
+    { "action": "shell", "resource": "which*", "effect": "allow" },
+    { "action": "shell", "resource": "printf*", "effect": "allow" },
+    { "action": "shell", "resource": "file*", "effect": "allow" },
+    { "action": "shell", "resource": "bat*", "effect": "allow" },
+    { "action": "shell", "resource": "head*", "effect": "allow" },
+    { "action": "shell", "resource": "man*", "effect": "allow" },
+    { "action": "shell", "resource": "readlink*", "effect": "allow" },
+    { "action": "shell", "resource": "tar t*", "effect": "allow" },
+    { "action": "shell", "resource": "tar --list*", "effect": "allow" },
+    { "action": "shell", "resource": "gzip -l*", "effect": "allow" },
+    { "action": "shell", "resource": "gzip -t*", "effect": "allow" },
+    { "action": "shell", "resource": "gunzip -l*", "effect": "allow" },
+    { "action": "shell", "resource": "gunzip -t*", "effect": "allow" },
+    { "action": "shell", "resource": "unzip -l*", "effect": "allow" },
+    { "action": "shell", "resource": "unzip -t*", "effect": "allow" },
+    { "action": "shell", "resource": "apropos*", "effect": "allow" },
+
+    // ---- Git read-only ----
+    { "action": "shell", "resource": "git status*", "effect": "allow" },
+    { "action": "shell", "resource": "git log*", "effect": "allow" },
+    { "action": "shell", "resource": "git diff*", "effect": "allow" },
+    { "action": "shell", "resource": "git show*", "effect": "allow" },
+    { "action": "shell", "resource": "git branch*", "effect": "allow" },
+
+    // ---- Git destructive ----
+    { "action": "shell", "resource": "git branch -d*", "effect": "ask" },
+    { "action": "shell", "resource": "git branch -D*", "effect": "ask" },
+    { "action": "shell", "resource": "git branch --delete*", "effect": "ask" },
+    { "action": "shell", "resource": "git branch -m*", "effect": "ask" },
+    { "action": "shell", "resource": "git branch -M*", "effect": "ask" },
+    { "action": "shell", "resource": "git branch -c*", "effect": "ask" },
+    { "action": "shell", "resource": "git branch --copy*", "effect": "ask" },
+    { "action": "shell", "resource": "git branch -u*", "effect": "ask" },
+    { "action": "shell", "resource": "git branch --edit-description*", "effect": "ask" },
+    { "action": "shell", "resource": "git tag*", "effect": "allow" },
+    { "action": "shell", "resource": "git tag -d*", "effect": "ask" },
+    { "action": "shell", "resource": "git tag --delete*", "effect": "ask" },
+    { "action": "shell", "resource": "git tag -a*", "effect": "ask" },
+    { "action": "shell", "resource": "git tag -s*", "effect": "ask" },
+    { "action": "shell", "resource": "git tag -f*", "effect": "ask" },
+    { "action": "shell", "resource": "git stash list*", "effect": "allow" },
+    { "action": "shell", "resource": "git stash show*", "effect": "allow" },
+    { "action": "shell", "resource": "git reflog*", "effect": "allow" },
+    { "action": "shell", "resource": "git blame*", "effect": "allow" },
+    { "action": "shell", "resource": "git grep*", "effect": "allow" },
+    { "action": "shell", "resource": "git ls-files*", "effect": "allow" },
+    { "action": "shell", "resource": "git ls-tree*", "effect": "allow" },
+    { "action": "shell", "resource": "git ls-remote*", "effect": "allow" },
+    { "action": "shell", "resource": "git rev-parse*", "effect": "allow" },
+    { "action": "shell", "resource": "git rev-list*", "effect": "allow" },
+    { "action": "shell", "resource": "git describe*", "effect": "allow" },
+    { "action": "shell", "resource": "git remote -v*", "effect": "allow" },
+    { "action": "shell", "resource": "git remote show*", "effect": "allow" },
+    { "action": "shell", "resource": "git config --get*", "effect": "allow" },
+    { "action": "shell", "resource": "git config --get-regexp*", "effect": "allow" },
+    { "action": "shell", "resource": "git config --list*", "effect": "allow" },
+    { "action": "shell", "resource": "git worktree list*", "effect": "allow" },
+    { "action": "shell", "resource": "git shortlog*", "effect": "allow" },
+    { "action": "shell", "resource": "git for-each-ref*", "effect": "allow" },
+    { "action": "shell", "resource": "git merge-base*", "effect": "allow" },
+    { "action": "shell", "resource": "git cherry*", "effect": "allow" },
+    { "action": "shell", "resource": "git name-rev*", "effect": "allow" },
+    { "action": "shell", "resource": "git cat-file*", "effect": "allow" },
+    { "action": "shell", "resource": "git count-objects*", "effect": "allow" },
+    { "action": "shell", "resource": "git submodule status*", "effect": "allow" },
+    { "action": "shell", "resource": "git notes list*", "effect": "allow" },
+    { "action": "shell", "resource": "git notes show*", "effect": "allow" },
+    { "action": "shell", "resource": "git check-ignore*", "effect": "allow" },
+    { "action": "shell", "resource": "git check-attr*", "effect": "allow" },
+    { "action": "shell", "resource": "git verify-commit*", "effect": "allow" },
+    { "action": "shell", "resource": "git verify-tag*", "effect": "allow" },
+    { "action": "shell", "resource": "git range-diff*", "effect": "allow" },
+    { "action": "shell", "resource": "git help*", "effect": "allow" },
+
+    // ---- GitHub CLI read-only ----
+    { "action": "shell", "resource": "gh --help*", "effect": "allow" },
+    { "action": "shell", "resource": "gh -h*", "effect": "allow" },
+    { "action": "shell", "resource": "gh --version*", "effect": "allow" },
+    { "action": "shell", "resource": "gh api * --method GET*", "effect": "allow" },
+    { "action": "shell", "resource": "gh api * -X GET*", "effect": "allow" },
+    { "action": "shell", "resource": "gh auth status*", "effect": "allow" },
+    { "action": "shell", "resource": "gh copilot suggest*", "effect": "allow" },
+    { "action": "shell", "resource": "gh gist list*", "effect": "allow" },
+    { "action": "shell", "resource": "gh gist view*", "effect": "allow" },
+    { "action": "shell", "resource": "gh issue list*", "effect": "allow" },
+    { "action": "shell", "resource": "gh issue status*", "effect": "allow" },
+    { "action": "shell", "resource": "gh issue view*", "effect": "allow" },
+    { "action": "shell", "resource": "gh label list*", "effect": "allow" },
+    { "action": "shell", "resource": "gh pr checks*", "effect": "allow" },
+    { "action": "shell", "resource": "gh pr diff*", "effect": "allow" },
+    { "action": "shell", "resource": "gh pr list*", "effect": "allow" },
+    { "action": "shell", "resource": "gh pr status*", "effect": "allow" },
+    { "action": "shell", "resource": "gh pr view*", "effect": "allow" },
+    { "action": "shell", "resource": "gh release list*", "effect": "allow" },
+    { "action": "shell", "resource": "gh release view*", "effect": "allow" },
+    { "action": "shell", "resource": "gh repo list*", "effect": "allow" },
+    { "action": "shell", "resource": "gh repo view*", "effect": "allow" },
+    { "action": "shell", "resource": "gh run list*", "effect": "allow" },
+    { "action": "shell", "resource": "gh run view*", "effect": "allow" },
+    { "action": "shell", "resource": "gh search *", "effect": "allow" },
+    { "action": "shell", "resource": "gh workflow list*", "effect": "allow" },
+    { "action": "shell", "resource": "gh workflow view*", "effect": "allow" },
+    { "action": "shell", "resource": "gh variable list*", "effect": "allow" },
+
+    // ---- Package manager queries ----
+    { "action": "shell", "resource": "yay -F*", "effect": "allow" },
+    { "action": "shell", "resource": "yay -Q*", "effect": "allow" },
+    { "action": "shell", "resource": "yay -T*", "effect": "allow" },
+    { "action": "shell", "resource": "yay -P*", "effect": "allow" },
+    { "action": "shell", "resource": "yay -Gp*", "effect": "allow" },
+    { "action": "shell", "resource": "yay -h*", "effect": "allow" },
+    { "action": "shell", "resource": "yay --help*", "effect": "allow" },
+    { "action": "shell", "resource": "yay -V*", "effect": "allow" },
+    { "action": "shell", "resource": "yay --version*", "effect": "allow" },
+    { "action": "shell", "resource": "pacman -F*", "effect": "allow" },
+    { "action": "shell", "resource": "pacman -Q*", "effect": "allow" },
+    { "action": "shell", "resource": "pacman -T*", "effect": "allow" },
+    { "action": "shell", "resource": "pacman -h*", "effect": "allow" },
+    { "action": "shell", "resource": "pacman --help*", "effect": "allow" },
+    { "action": "shell", "resource": "pacman -V*", "effect": "allow" },
+    { "action": "shell", "resource": "pacman --version*", "effect": "allow" },
+    { "action": "shell", "resource": "uv pip list*", "effect": "allow" },
+    { "action": "shell", "resource": "uv pip show*", "effect": "allow" },
+    { "action": "shell", "resource": "uv pip freeze*", "effect": "allow" },
+    { "action": "shell", "resource": "uv pip tree*", "effect": "allow" },
+    { "action": "shell", "resource": "uv tool list*", "effect": "allow" },
+    { "action": "shell", "resource": "uv tool dir*", "effect": "allow" },
+    { "action": "shell", "resource": "uv cache dir*", "effect": "allow" },
+    { "action": "shell", "resource": "uv python list*", "effect": "allow" },
+    { "action": "shell", "resource": "uv python find*", "effect": "allow" },
+    { "action": "shell", "resource": "uv tree*", "effect": "allow" },
+    { "action": "shell", "resource": "uv lock --check*", "effect": "allow" },
+    { "action": "shell", "resource": "uv lock --check-exists*", "effect": "allow" },
+    { "action": "shell", "resource": "uv auth token*", "effect": "allow" },
+    { "action": "shell", "resource": "uv auth dir*", "effect": "allow" },
+    { "action": "shell", "resource": "uv help*", "effect": "allow" },
+    { "action": "shell", "resource": "uv --help*", "effect": "allow" },
+    { "action": "shell", "resource": "uv -V*", "effect": "allow" },
+
+    // ---- Null redirects ----
+    { "action": "shell", "resource": "*2>/dev/null*", "effect": "allow" },
+    { "action": "shell", "resource": "* 2> /dev/null*", "effect": "allow" },
+    { "action": "shell", "resource": "*>/dev/null 2>&1*", "effect": "allow" },
+    { "action": "shell", "resource": "* &> /dev/null*", "effect": "allow" },
+    { "action": "shell", "resource": "* &>/dev/null*", "effect": "allow" },
+    { "action": "shell", "resource": "* 2>&1*", "effect": "allow" },
+
+    // ---- Tool overrides ----
+    { "action": "shell", "resource": "ctx7*", "effect": "allow" },
+    { "action": "shell", "resource": "rtk *", "effect": "allow" },
+    { "action": "shell", "resource": "deno fmt*", "effect": "deny" },
+
+    // ---- Forbidden tools ----
+    { "action": "shell", "resource": "grep*", "effect": "deny" },
+    { "action": "shell", "resource": "source *", "effect": "ask" },
+
+    // ---- Forbidden system tools ----
+    { "action": "shell", "resource": "sudo *", "effect": "deny" },
+    { "action": "shell", "resource": "su *", "effect": "deny" },
+    { "action": "shell", "resource": "pkexec *", "effect": "deny" },
+    { "action": "shell", "resource": "pip *", "effect": "deny" },
+    { "action": "shell", "resource": "pip3 *", "effect": "deny" },
+    { "action": "shell", "resource": "pipx *", "effect": "deny" },
+    { "action": "shell", "resource": "apt *", "effect": "deny" },
+    { "action": "shell", "resource": "apt-get *", "effect": "deny" },
+    { "action": "shell", "resource": "dnf *", "effect": "deny" },
+    { "action": "shell", "resource": "yum *", "effect": "deny" },
+    { "action": "shell", "resource": "snap *", "effect": "deny" },
+    { "action": "shell", "resource": "zypper *", "effect": "deny" },
+    { "action": "shell", "resource": "brew *", "effect": "deny" },
+    { "action": "shell", "resource": "npm *", "effect": "deny" },
+    { "action": "shell", "resource": "npx *", "effect": "deny" },
+    { "action": "shell", "resource": "pnpm *", "effect": "deny" },
+    { "action": "shell", "resource": "yarn *", "effect": "deny" },
+    { "action": "shell", "resource": "service *", "effect": "deny" },
+
+    // ---- File I/O ----
+    { "action": "webfetch", "resource": "*", "effect": "allow" },
+    { "action": "websearch", "resource": "*", "effect": "allow" },
+    { "action": "read", "resource": "*", "effect": "allow" },
+    { "action": "read", "resource": "*.env", "effect": "ask" },
+    { "action": "read", "resource": "*.env.*", "effect": "ask" },
+    { "action": "read", "resource": "**/.env*", "effect": "ask" },
+    { "action": "read", "resource": "*.env.example", "effect": "allow" },
+
+    // ---- Agent behavior ----
+    { "action": "question", "resource": "*", "effect": "allow" },
+    // V1 `doom_loop` is not a V2 permission action; dropped.
+
+    // ---- External paths ----
+    { "action": "external_directory", "resource": "*", "effect": "ask" },
+    { "action": "external_directory", "resource": "~/repos/**", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/scripts/**", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.config/**", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/downloads/**", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.agents/skills/*", "effect": "allow" },
+    { "action": "external_directory", "resource": "/tmp/opencode/**", "effect": "allow" },
+    {
+      "action": "external_directory",
+      "resource": "~/.local/share/opencode/tool-output/*",
+      "effect": "allow",
+    },
+
+    // ---- Skills ----
+    { "action": "skill", "resource": "*", "effect": "allow" },
+
+    // ---- Agent tools ----
+    { "action": "agy", "resource": "*", "effect": "allow" },
+    { "action": "subagent", "resource": "*", "effect": "allow" },
   ],
-  "agent": {}
+
+  // ======================================== //
+  // Plugins                                  //
+  // ======================================== //
+
+  "plugins": ["@tarquinen/opencode-dcp", "opencode-supermemory"],
+  // opencode-supermemory >= 2.0.15 loads on OpenCode V2 (resolves the ./server export).
+  // Installer-written V1 "plugin" entry and the recall permission are intentionally
+  // omitted; the CLI installer is avoided (issue #91 writes a stray key copy).
+
+  // ======================================== //
+  // Commands                                 //
+  // ======================================== //
+
+  "commands": {
+    "YOLO": {
+      "template": "$ARGUMENTS",
+      "description": "Execute a task with all permissions auto-approved",
+      "agent": "YOLO",
+    },
+  },
+
+  // ======================================== //
+  // Agents                                   //
+  // ======================================== //
+
+  // NOTE: built-in agents (`build`, `plan`) are configured here. A same-named
+  // `agents/*.md` file is NOT merged and is ignored for built-ins. Custom agents
+  // (`YOLO`, `gemini`) are defined by their `agents/*.md` files alone.
+  //
+  // PERMISSION DELTAS: an agent's `permissions` list is a DELTA on top of the
+  // global array (see the Permissions section header for the layering contract).
+  // A short list is therefore normal and intentional — it records only the
+  // deviations, not the full effective set. Read "effective = base + global +
+  // this delta, last match wins".
+  "agents": {
+    "build": {
+      "mode": "primary",
+      "steps": 50,
+      // NOTE: V2 preserves `request` values but does not send them with model
+      // requests yet. Kept here per the V2 migration mapping for `temperature`.
+      "request": {
+        "body": { "temperature": 0.0 },
+      },
+      "permissions": [
+        { "action": "shell", "resource": "mkdir*", "effect": "allow" },
+        { "action": "shell", "resource": "rm *", "effect": "ask" },
+        { "action": "shell", "resource": "chmod*", "effect": "ask" },
+        { "action": "shell", "resource": "go vet*", "effect": "allow" },
+        { "action": "shell", "resource": "conftest test*", "effect": "allow" },
+        { "action": "shell", "resource": "conftest verify*", "effect": "allow" },
+        { "action": "shell", "resource": "pkl format*", "effect": "allow" },
+        { "action": "shell", "resource": "copilot *", "effect": "allow" },
+        { "action": "shell", "resource": "gh copilot *", "effect": "allow" },
+        { "action": "shell", "resource": "echo* >*", "effect": "ask" },
+        { "action": "shell", "resource": "*>*", "effect": "ask" },
+        { "action": "subagent", "resource": "explore", "effect": "allow" },
+        { "action": "subagent", "resource": "general", "effect": "allow" },
+        { "action": "subagent", "resource": "code-reviewer", "effect": "allow" },
+        { "action": "subagent", "resource": "gemini", "effect": "allow" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+      ],
+    },
+    "plan": {
+      "mode": "primary",
+      "steps": 50,
+      "description": "Research, plan, and hand off. Read-only.",
+      "system": "You are opencode in plan mode. Understand the problem, research the codebase, and deliver a structured implementation plan. You MUST NOT edit project files, run destructive commands, or make system changes. The only file you MAY write is a plan file under ~/.opencode/plan, and only when the user asks.\n\nYour final plan MUST use exactly this structure:\n\nPLAN:\nStep-by-step implementation order. Each step references concrete files.\n\nFILES:\nEvery file that needs modification, with rationale.\n\nRISKS:\nEdge cases, breaking changes, and assumptions, each with a mitigation.\n\nVERIFICATION:\nSpecific commands, tests, or manual steps that prove the change works.\n\nMUST NOT begin implementation, edit project files, or run side-effecting commands.",
+      "permissions": [
+        { "action": "subagent", "resource": "explore", "effect": "allow" },
+        { "action": "subagent", "resource": "general", "effect": "allow" },
+        { "action": "subagent", "resource": "code-reviewer", "effect": "allow" },
+        { "action": "subagent", "resource": "gemini", "effect": "allow" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+      ],
+    },
+    "general": {
+      "mode": "subagent",
+      "system": "You have investigation-only shell access. You can search, inspect, and query the system. For package installs, file modifications, git commits, API write operations, or any command with side effects, delegate back to the primary agent.",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+      ],
+    },
+    "code-reviewer": {
+      "description": "Reviews code for security, performance, and maintainability",
+      "mode": "subagent",
+      "system": "You are a code reviewer. Focus on security, performance, and maintainability. Identify bugs, edge cases, and suggest improvements. Do not modify files.\n\nYour job is to falsify, not to confirm. Before reporting success you MUST:\n- state the concrete criteria you checked;\n- run at least one NEGATIVE test (a case that should fail) where applicable;\n- run the complete relevant test suite, not a single representative test;\n- report anything you could not verify, rather than omitting it.\nA single passing check is not verification.",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "*", "effect": "deny" },
+        { "action": "webfetch", "resource": "*", "effect": "allow" },
+        { "action": "agy", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+      ],
+    },
+    "title": {
+      // V1 `small_model` maps to the built-in title agent's model selection.
+      "model": "deepseek/deepseek-flash",
+    },
+  },
+  // ======================================== //
+  // MCP Servers                              //
+  // ======================================== //
+
+  // V2 uses `mcp.servers` with `disabled` (inverse of V1 `enabled`) and grouped timeouts.
+  // Code intelligence comes from MCP: Serena (navigation/symbols/diagnostics).
+  // cclsp is kept configured but disabled; enable it for directories that are not
+  // git projects and have no `.serena/project.yml` (Serena must activate a project).
+  "mcp": {
+    "servers": {
+      // Semantic code intelligence over LSP (40+ languages). Global entry:
+      // --project-from-cwd activates the project for the current workspace.
+      "serena": {
+        "type": "local",
+        "command": [
+          "{env:HOME}/.local/bin/serena",
+          "start-mcp-server",
+          "--context",
+          "ide",
+          "--project-from-cwd",
+          "--open-web-dashboard",
+          "false",
+        ],
+        "environment": { "SERENA_HOME": "{env:HOME}/.config/serena" },
+        "timeout": { "startup": 60000 },
+      },
+      // Disabled by default: Serena already provides diagnostics, so cclsp would run
+      // a duplicate set of language servers. Enable for workspaces that are not git
+      // projects and have no `.serena/project.yml`. Catalog: ~/.config/opencode/cclsp.json.
+      "cclsp": {
+        "type": "local",
+        "command": ["bun", "x", "cclsp@0.7.0"],
+        "environment": { "CCLSP_CONFIG_PATH": "{env:HOME}/.config/opencode/cclsp.json" },
+        "disabled": true,
+        "timeout": { "startup": 60000 },
+      },
+    },
+  },
+  // Optional servers kept disabled for reference:
+  //   "context7": { "type": "remote", "url": "https://mcp.context7.com/mcp", "disabled": true,
+  //     "headers": { "CONTEXT7_API_KEY": "{file:~/.config/opencode/.secrets/context7-key}" } },
+  //   "github": { "type": "remote", "url": "https://api.githubcopilot.com/mcp/", "disabled": true,
+  //     "headers": { "Authorization": "Bearer {file:~/.config/opencode/.secrets/github-token}" } },
+  //   "headroom": { "type": "local", "command": ["headroom", "mcp", "serve", "--proxy-url", "http://127.0.0.1:8787"], "disabled": true }
 }

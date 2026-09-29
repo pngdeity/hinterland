@@ -1,0 +1,8 @@
+# The repo root ignores `*.md` globally; this subtree intentionally tracks
+# agent definitions and DCP prompt overrides, so re-include them here.
+!agents/*.md
+!dcp-prompts/**/*.md
+
+# DCP's bundled default prompts are upstream artifacts, not local config.
+# Only the active `overrides/` belong in the repo.
+dcp-prompts/defaults/
