@@ -16,8 +16,38 @@
       "rootDir": "."
     },
     {
+      "extensions": ["rs"],
+      "command": ["rust-analyzer"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["c", "h", "cc", "cpp", "cxx", "hpp", "hh"],
+      "command": ["clangd"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["java"],
+      "command": ["jdtls"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["cs"],
+      "command": ["omnisharp", "-lsp"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["dart"],
+      "command": ["dart", "language-server"],
+      "rootDir": "."
+    },
+    {
       "extensions": ["yaml", "yml"],
       "command": ["yaml-language-server", "--stdio"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["toml"],
+      "command": ["taplo", "lsp", "stdio"],
       "rootDir": "."
     },
     {
@@ -28,6 +58,11 @@
     {
       "extensions": ["lua"],
       "command": ["lua-language-server"],
+      "rootDir": "."
+    },
+    {
+      "extensions": ["dockerfile"],
+      "command": ["docker-langserver", "--stdio"],
       "rootDir": "."
     }
   ]

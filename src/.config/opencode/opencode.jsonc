@@ -173,7 +173,8 @@
   // ======================================== //
 
   // OpenCode V2 does not run language servers; the former `lsp` block was removed.
-  // Code intelligence comes from MCP: Serena (`serena.*`) and cclsp (disabled).
+  // Code intelligence comes from MCP: serena (semantic, project-scoped) and cclsp
+  // (universal extension-keyed LSP). See the `mcp` block below.
 
   // ======================================== //
   // Compaction (built-in)                    //
@@ -592,13 +593,19 @@
   // ======================================== //
 
   // V2 uses `mcp.servers` with `disabled` (inverse of V1 `enabled`) and grouped timeouts.
-  // Code intelligence comes from MCP: Serena (navigation/symbols/diagnostics).
-  // cclsp is kept configured but disabled; enable it for directories that are not
-  // git projects and have no `.serena/project.yml` (Serena must activate a project).
+  // Code intelligence comes from MCP, in two complementary layers:
+  //   serena - deep semantic navigation/editing; needs a resolvable project. Project
+  //            data is centralized (see `project_serena_folder_location` in
+  //            ~/.config/serena/serena_config.yml), so no `.serena/` dirs appear in
+  //            working trees.
+  //   cclsp  - shallow-but-universal LSP keyed by file extension from one global
+  //            catalog. Spawns language servers lazily on first tool call, so it costs
+  //            nothing while idle. Covers directories serena cannot serve.
   "mcp": {
     "servers": {
       // Semantic code intelligence over LSP (40+ languages). Global entry:
       // --project-from-cwd activates the project for the current workspace.
+      // Dashboard is disabled globally in serena_config.yml, so no CLI flag is needed.
       "serena": {
         "type": "local",
         "command": [
@@ -607,20 +614,20 @@
           "--context",
           "ide",
           "--project-from-cwd",
-          "--open-web-dashboard",
-          "false",
         ],
         "environment": { "SERENA_HOME": "{env:HOME}/.config/serena" },
         "timeout": { "startup": 60000 },
       },
-      // Disabled by default: Serena already provides diagnostics, so cclsp would run
-      // a duplicate set of language servers. Enable for workspaces that are not git
-      // projects and have no `.serena/project.yml`. Catalog: ~/.config/opencode/cclsp.json.
+      // Universal LSP baseline. Complements serena: resolves symbols by file extension
+      // with no project concept, and retries position combinations that LLMs commonly
+      // miscount. Language servers start lazily and are cached per config entry.
+      // Installed under ~/.local/lib/node_modules with a ~/.local/bin symlink, matching
+      // the ctx7 convention, so no network fetch occurs on spawn.
+      // Catalog: ~/.config/opencode/cclsp.json.
       "cclsp": {
         "type": "local",
-        "command": ["bun", "x", "cclsp@0.7.0"],
+        "command": ["{env:HOME}/.local/bin/cclsp"],
         "environment": { "CCLSP_CONFIG_PATH": "{env:HOME}/.config/opencode/cclsp.json" },
-        "disabled": true,
         "timeout": { "startup": 60000 },
       },
     },
